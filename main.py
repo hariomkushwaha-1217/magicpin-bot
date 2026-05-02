@@ -5,13 +5,22 @@ from storage import save_context
 app = FastAPI()
 
 
-# ✅ Health Check
+#Root Endpoint
+@app.get("/")
+def home():
+    return {
+        "message": "Vera Message Engine is running",
+        "status": "ok"
+    }
+
+
+# Health Check
 @app.get("/v1/healthz")
 def health():
     return {"status": "ok"}
 
 
-# ✅ Metadata
+# Metadata
 @app.get("/v1/metadata")
 def metadata():
     return {
@@ -21,7 +30,7 @@ def metadata():
     }
 
 
-# ✅ Context Store
+# Context Store
 @app.post("/v1/context")
 def context(data: dict):
     context_id = data.get("context_id")
@@ -35,11 +44,10 @@ def context(data: dict):
     }
 
 
-# ✅ Tick (Judge Compatible)
+# Tick (Judge Compatible)
 @app.post("/v1/tick")
 def tick(data: dict):
     triggers = data.get("available_triggers", [])
-
     actions = []
 
     for trig_id in triggers:
@@ -65,24 +73,20 @@ def tick(data: dict):
     return {"actions": actions}
 
 
-# ✅ Reply (FINAL FIXED VERSION)
+# Reply Handler
 @app.post("/v1/reply")
 def reply(data: dict):
     message = data.get("message", "").lower()
 
-    # 🔴 HOSTILE / STOP
+    # Hostile / Stop
     if any(word in message for word in ["stop", "spam", "don't", "do not"]):
-        return {
-            "action": "end"
-        }
+        return {"action": "end"}
 
-    # 🔴 AUTO-REPLY DETECTION (important)
+    # Auto-reply detection
     if "thank you for contacting" in message:
-        return {
-            "action": "end"
-        }
+        return {"action": "end"}
 
-    # 🔹 POSITIVE INTENT (strong action)
+    # Positive intent
     if any(word in message for word in ["yes", "ok", "sure", "do it"]):
         return {
             "action": "send",
@@ -90,7 +94,7 @@ def reply(data: dict):
             "cta": "View Campaign"
         }
 
-    # 🔹 DEFAULT
+    # Default
     return {
         "action": "wait",
         "wait_seconds": 30

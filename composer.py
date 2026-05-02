@@ -13,7 +13,7 @@ def compose(category, merchant, trigger, customer=None):
     cta = ""
     rationale = ""
 
-    # 🔹 SEARCH SPIKE (High scoring logic)
+    # SEARCH SPIKE (High scoring logic)
     if trigger_type == "search_spike":
         keyword = trigger.get("keyword", "")
         count = trigger.get("count", 0)
@@ -41,7 +41,7 @@ def compose(category, merchant, trigger, customer=None):
 
         cta = "Send Offer"
 
-    # 🔹 SALES DIP
+    # SALES DIP
     elif trigger_type == "sales_dip":
         drop = trigger.get("drop_percent", 0)
 
@@ -52,7 +52,7 @@ def compose(category, merchant, trigger, customer=None):
         cta = "Start Campaign"
         rationale = "Sales drop → recovery needed"
 
-    # 🔹 FESTIVAL
+    # FESTIVAL
     elif trigger_type == "festival":
         name = trigger.get("name", "Upcoming festival")
 
@@ -63,7 +63,7 @@ def compose(category, merchant, trigger, customer=None):
         cta = "Create Offer"
         rationale = "Seasonal spike opportunity"
 
-    # 🔹 CATEGORY TONE ADJUSTMENT
+    # CATEGORY TONE ADJUSTMENT
     if category_type == "dentists":
         message = message.replace("people", "patients")
 
@@ -73,7 +73,7 @@ def compose(category, merchant, trigger, customer=None):
     elif category_type == "pharmacies":
         message += " Ensure stock availability to avoid missed sales."
 
-    # 🔹 DEFAULT FALLBACK
+    # DEFAULT FALLBACK
     if not message:
         message = (
             f"You currently have {orders} orders in {locality}. "
