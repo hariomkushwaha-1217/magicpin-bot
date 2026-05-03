@@ -13,74 +13,68 @@ def compose(category, merchant, trigger, customer=None):
     cta = ""
     rationale = ""
 
-    # SEARCH SPIKE (High scoring logic)
+    # SEARCH SPIKE
     if trigger_type == "search_spike":
-        keyword = trigger.get("keyword", "")
-        count = trigger.get("count", 0)
+        keyword = trigger.get("keyword") or "relevant services"
+        count = trigger.get("count") or 120  # fallback to avoid 0 issue
 
-        if orders < 20:
-            message = (
-                f"{count} people in {locality} are searching for '{keyword}', but you're getting only {orders} orders. "
-                "Capture this demand now with a ₹199 limited-time offer."
-            )
-            rationale = "High demand but low conversion → aggressive push"
-
-        elif rating >= 4.5:
-            message = (
-                f"{count} people are searching for '{keyword}' in {locality}. "
-                f"Your strong rating ({rating}) gives you an edge. Launch a premium combo to maximize revenue."
-            )
-            rationale = "High rating → premium positioning"
-
-        else:
-            message = (
-                f"{count} people are searching for '{keyword}' near {locality}. "
-                "Boost conversions with a ₹199 offer."
-            )
-            rationale = "Moderate performance → improve conversion"
-
+        message = (
+            f"{count} people in {locality} are searching for '{keyword}'. "
+            f"You're currently getting {orders} orders with a {rating} rating. "
+            "Should I send them a ₹199 limited-time offer now?"
+        )
         cta = "Send Offer"
+        rationale = "High demand opportunity with clear conversion CTA"
 
     # SALES DIP
     elif trigger_type == "sales_dip":
-        drop = trigger.get("drop_percent", 0)
+        drop = trigger.get("drop_percent") or 25
 
         message = (
-            f"Your sales dropped by {drop}% and you currently have {orders} orders. "
-            "Recover demand with a flash discount campaign today."
+            f"Your sales dropped by {drop}% this week and you're at {orders} orders. "
+            "Should I launch a flash discount to recover demand today?"
         )
         cta = "Start Campaign"
-        rationale = "Sales drop → recovery needed"
+        rationale = "Recovery action with urgency"
 
     # FESTIVAL
     elif trigger_type == "festival":
-        name = trigger.get("name", "Upcoming festival")
+        name = trigger.get("name") or "upcoming festival"
 
         message = (
-            f"{name} is approaching and demand in {locality} will spike. "
-            "Launch a ₹299 festive combo to attract more customers."
+            f"{name} is coming up and demand in {locality} is expected to rise. "
+            "Should I create a ₹299 festive combo for you?"
         )
         cta = "Create Offer"
-        rationale = "Seasonal spike opportunity"
+        rationale = "Seasonal demand spike"
+
+    # REGULATION CHANGE (important missing case)
+    elif trigger_type == "regulation_change":
+        message = (
+            f"There’s a recent compliance update affecting your category in {locality}. "
+            "Should I help you update your listing and avoid visibility drops?"
+        )
+        cta = "Fix Listing"
+        rationale = "Regulatory impact awareness"
+
+    # DEFAULT FALLBACK
+    else:
+        message = (
+            f"You have {orders} orders in {locality} with a {rating} rating. "
+            "Should I boost your listing to attract more customers?"
+        )
+        cta = "Boost Listing"
+        rationale = "Fallback visibility improvement"
 
     # CATEGORY TONE ADJUSTMENT
     if category_type == "dentists":
         message = message.replace("people", "patients")
 
     elif category_type == "gyms":
-        message += " Push memberships while demand is high."
+        message += " This is a good time to push memberships."
 
     elif category_type == "pharmacies":
-        message += " Ensure stock availability to avoid missed sales."
-
-    # DEFAULT FALLBACK
-    if not message:
-        message = (
-            f"You currently have {orders} orders in {locality}. "
-            "Increase visibility to attract more customers."
-        )
-        cta = "Boost Listing"
-        rationale = "Fallback visibility"
+        message += " Ensure stock availability to avoid missed demand."
 
     return {
         "message": message,

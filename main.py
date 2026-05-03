@@ -1,101 +1,43 @@
-from fastapi import FastAPI
-from composer import compose
-from storage import save_context
-
-app = FastAPI()
-
-
-#Root Endpoint
-@app.get("/")
-def home():
-    return {
-        "message": "Vera Message Engine is running",
-        "status": "ok"
-    }
-
-
-# Health Check
-@app.get("/v1/healthz")
-def health():
-    return {"status": "ok"}
-
-
-# Metadata
-@app.get("/v1/metadata")
-def metadata():
-    return {
-        "team_name": "Hari Om Kushwaha",
-        "bot_name": "Vera Engine",
-        "model": "rule-based-v1"
-    }
-
-
-# Context Store
-@app.post("/v1/context")
-def context(data: dict):
-    context_id = data.get("context_id")
-    payload = data.get("payload")
-
-    save_context(context_id, payload)
-
-    return {
-        "accepted": True,
-        "context_id": context_id
-    }
-
-
-# Tick (Judge Compatible)
-@app.post("/v1/tick")
-def tick(data: dict):
-    triggers = data.get("available_triggers", [])
-    actions = []
-
-    for trig_id in triggers:
-        merchant = {
-            "id": "m1",
-            "rating": 4.2,
-            "orders": 15
-        }
-
-        category = {"type": "restaurant"}
-
-        result = compose(category, merchant, {"type": "search_spike"}, None)
-
-        actions.append({
-            "type": "message",
-            "body": result["message"],
-            "cta": result["cta"],
-            "send_as": result["send_as"],
-            "merchant_id": merchant["id"],
-            "trigger_id": trig_id
-        })
-
-    return {"actions": actions}
-
-
-# Reply Handler
 @app.post("/v1/reply")
 def reply(data: dict):
     message = data.get("message", "").lower()
+    role = data.get("from_role", "merchant")
 
-    # Hostile / Stop
+    # STOP / HOSTILE
     if any(word in message for word in ["stop", "spam", "don't", "do not"]):
         return {"action": "end"}
 
-    # Auto-reply detection
+    # AUTO-REPLY
     if "thank you for contacting" in message:
         return {"action": "end"}
 
-    # Positive intent
-    if any(word in message for word in ["yes", "ok", "sure", "do it"]):
+    # CUSTOMER RESPONSE (booking intent)
+    if role == "customer":
         return {
             "action": "send",
-            "body": "Done. Your campaign is now being created. You’ll start receiving orders shortly.",
+            "body": "Your booking request is received. The merchant will confirm shortly.",
+            "cta": "View Details"
+        }
+
+    # MERCHANT POSITIVE INTENT
+    if any(word in message for word in ["yes", "ok", "sure", "do it", "go ahead"]):
+        return {
+            "action": "send",
+            "body": "Great. I'm launching this campaign for you now. You should start seeing results shortly.",
             "cta": "View Campaign"
         }
 
-    # Default
+    # MERCHANT QUESTION / HELP REQUEST
+    if "help" in message or "what" in message:
+        return {
+            "action": "send",
+            "body": "I can help you improve visibility, run offers, or recover sales. Would you like me to suggest the best option?",
+            "cta": "Get Suggestions"
+        }
+
+    # DEFAULT
     return {
-        "action": "wait",
-        "wait_seconds": 30
+        "action": "send",
+        "body": "Would you like me to run a campaign to improve your orders?",
+        "cta": "Yes, proceed"
     }
